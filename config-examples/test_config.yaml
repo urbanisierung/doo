@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://bucket.u11g.com/doo-config.schema.json
+
+commands:
+  # Docker commands
+  docker-ps: "docker ps"
+  docker-logs: "docker logs -f #1"
+  docker-exec: "docker exec -it #1 /bin/bash"
+  
+  # Git commands  
+  git-status: "git status"
+  git-push: "git push origin #1"
+  
+  # Conflicting command (also exists in main config)
+  pods: "docker ps --filter name=#1"

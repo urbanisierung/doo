@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://bucket.u11g.com/doo-config.schema.json
+
+commands:
+  # Network commands
+  ping: "ping -c 4 #1"
+  wget: "wget #1"
+  
+  # Another conflicting command
+  logs: "tail -f #1"

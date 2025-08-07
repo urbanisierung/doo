@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://bucket.u11g.com/doo-config.schema.json
+
+commands:
+  # Sample commands for testing GitHub import
+  hello: "echo Hello from GitHub config!"
+  date: "date"
+  pwd: "pwd"
+  ls-la: "ls -la #1"

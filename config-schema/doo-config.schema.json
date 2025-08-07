@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/urbanisierung/clap/main/doo-config.schema.json",
+  "title": "Doo CLI Configuration",
+  "description": "Configuration schema for Doo CLI command wrapper tool",
+  "type": "object",
+  "properties": {
+    "commands": {
+      "type": "object",
+      "description": "Command definitions with name-to-template mappings",
+      "patternProperties": {
+        "^[a-zA-Z0-9_-]+$": {
+          "type": "string",
+          "description": "Command template with variable placeholders. Use #1, #2, etc. for persistent variables or $1, $2, etc. for direct positional arguments",
+          "minLength": 1,
+          "examples": [
+            "kubectl get pods -n #1",
+            "docker logs -f $1",
+            "kubectl -n #1 logs $1 $2"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "minProperties": 1
+    },
+    "origin": {
+      "type": "object",
+      "description": "Origin information for imported configs (automatically added by doo import)",
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "GitHub repository in owner/repo format",
+          "pattern": "^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$",
+          "examples": ["username/my-configs", "organization/team-tools"]
+        },
+        "import_type": {
+          "type": "string",
+          "enum": ["Public", "Private"],
+          "description": "Type of repository import (Public via GitHub API or Private via Git clone)"
+        }
+      },
+      "required": ["repo", "import_type"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["commands"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "commands": {
+        "watch": "watch kubectl -n #1 get pods",
+        "logs": "kubectl logs -f -n #1 #2",
+        "pods": "kubectl get pods -n #1",
+        "describe": "kubectl describe pod -n #1 #2",
+        "quick-logs": "kubectl logs -f $1 -n $2",
+        "port-forward": "kubectl port-forward $1 $2:8080"
+      }
+    },
+    {
+      "commands": {
+        "docker-ps": "docker ps",
+        "docker-logs": "docker logs -f $1",
+        "docker-exec": "docker exec -it $1 /bin/bash",
+        "docker-build": "docker build -t #1 ."
+      }
+    }
+  ],
+  "definitions": {
+    "commandName": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "description": "Command name must contain only alphanumeric characters, underscores, and hyphens"
+    },
+    "commandTemplate": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Command template string with optional variable placeholders"
+    }
+  }
+}

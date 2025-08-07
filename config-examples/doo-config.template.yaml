@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://bucket.u11g.com/doo-config.schema.json
+
+# Doo CLI Configuration Template
+# Copy this file and customize it for your needs
+
+commands:
+  # Example commands using persistent variables (#1, #2, etc.)
+  # These can be set with: doo var #1 value
+  watch: "watch kubectl -n #1 get pods"
+  logs: "kubectl logs -f -n #1 #2"
+  pods: "kubectl get pods -n #1"
+  describe: "kubectl describe pod -n #1 #2"
+  deploy: "kubectl apply -f deployment.yaml -n #1"
+  scale: "kubectl scale deployment #2 --replicas=#3 -n #1"
+
+  # Example commands using direct positional arguments ($1, $2, etc.)
+  # These are always replaced with command-line arguments
+  quick-pods: "kubectl -n $1 get pods"
+  quick-logs: "kubectl logs -f $1 -n $2"
+  port-forward: "kubectl port-forward $1 $2:8080"
+  exec-pod: "kubectl exec -it $1 -- /bin/bash"
+
+  # Mixed approach - combine persistent variables and direct arguments
+  mixed-logs: "kubectl -n #1 logs $1 $2"  # #1 is persistent, $1/$2 are direct args
+
+  # Docker commands
+  docker-ps: "docker ps"
+  docker-logs: "docker logs -f $1"
+  docker-exec: "docker exec -it $1 /bin/bash"
+  docker-build: "docker build -t #1 ."
+
+  # Git commands
+  git-status: "git status"
+  git-push: "git push origin #1"
+  git-checkout: "git checkout $1"
+  git-branch: "git branch $1"
+
+  # System commands
+  disk-usage: "df -h"
+  memory-usage: "free -h"
+  process-grep: "ps aux | grep $1"
+  find-files: "find #1 -name $1 -type f"
+
+  # Network commands
+  ping-host: "ping -c 4 $1"
+  curl-get: "curl -X GET $1"
+  wget-file: "wget $1"
+  netstat-ports: "netstat -tuln | grep $1"
+
+# Note: The 'origin' field is automatically added when importing configs
+# via 'doo import username/repo' - don't add this manually

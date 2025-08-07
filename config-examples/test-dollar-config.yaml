@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=https://bucket.u11g.com/doo-config.schema.json
+
+commands:
+  # Test commands with dollar sign placeholders
+  pods-ns: "kubectl -n $1 get pods"
+  logs-pod: "kubectl logs -f $1 -n $2"
+  test-dollar: "echo namespace=$1 pod=$2"

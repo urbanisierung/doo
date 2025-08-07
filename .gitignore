@@ -1,0 +1,27 @@
+# Rust
+target/
+*/target/
+Cargo.lock
+output.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local config
+.env
+.env.local
+
+# Test files
+test-install.sh
+
+# Test outputs
+test-output/
+*.log
