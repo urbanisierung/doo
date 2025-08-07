@@ -8,7 +8,7 @@ param(
 
 # Configuration
 $RepoOwner = "urbanisierung"
-$RepoName = "clap"
+$RepoName = "doo"
 $BinaryName = "doo"
 $GitHubAPI = "https://api.github.com/repos/$RepoOwner/$RepoName"
 

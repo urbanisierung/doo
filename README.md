@@ -32,7 +32,7 @@ iwr -useb https://raw.githubusercontent.com/urbanisierung/doo/main/install.ps1 |
 ```bash
 # Clone the repository
 git clone https://github.com/urbanisierung/doo.git
-cd clap
+cd doo
 
 # Build and install
 cargo build --release

@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 REPO_OWNER="urbanisierung"
-REPO_NAME="clap"
+REPO_NAME="doo"
 BINARY_NAME="doo"
 GITHUB_API="https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}"
 
