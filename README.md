@@ -166,13 +166,13 @@ Doo config files follow a standardized YAML structure with JSON Schema validatio
 Add this line at the top of your config files to enable schema validation and autocompletion in supported IDEs:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/urbanisierung/doo/main/doo-config.schema.json
+# yaml-language-server: $schema=https://bucket.u11g.com/doo-config.schema.json
 ```
 
 #### Basic Structure
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/urbanisierung/doo/main/doo-config.schema.json
+# yaml-language-server: $schema=https://bucket.u11g.com/doo-config.schema.json
 
 commands:
   command-name: "command template"
@@ -213,7 +213,7 @@ doo import my-commands.yaml
 #### Example Valid Configuration
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/urbanisierung/doo/main/doo-config.schema.json
+# yaml-language-server: $schema=https://bucket.u11g.com/doo-config.schema.json
 
 commands:
   # Kubernetes commands with persistent variables
@@ -334,7 +334,7 @@ your-doo-configs/
 **Required `doo.yaml` format with schema support:**
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/urbanisierung/doo/main/doo-config.schema.json
+# yaml-language-server: $schema=https://bucket.u11g.com/doo-config.schema.json
 
 commands:
   # Examples of both placeholder types
