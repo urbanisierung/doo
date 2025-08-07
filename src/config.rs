@@ -613,11 +613,8 @@ impl ConfigManager {
             ));
         }
 
-        // Remove .git directory to save space
-        let git_dir = repo_dir.join(".git");
-        if git_dir.exists() {
-            let _ = fs::remove_dir_all(&git_dir);
-        }
+        // Keep .git directory for syncing functionality
+        println!("📁 Preserving git structure for future sync operations");
 
         // Find all YAML files in the repository root
         let mut imported_configs = Vec::new();
@@ -774,24 +771,59 @@ impl ConfigManager {
             })
             .collect();
 
-        if syncable_configs.is_empty() {
+        // Also collect GitHub repository directories
+        let mut github_repos = Vec::new();
+        if self.configs_dir.exists() {
+            for entry in fs::read_dir(&self.configs_dir)? {
+                let entry = entry?;
+                let path = entry.path();
+
+                if path.is_dir() && !path.file_name().unwrap().to_str().unwrap().starts_with('.') {
+                    // Check if this looks like a GitHub repo directory (contains owner-repo format)
+                    if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
+                        if dir_name.contains('-') {
+                            // Check if there's a .git directory or if we can determine it's a GitHub repo
+                            let git_dir = path.join(".git");
+                            if git_dir.exists() || self.looks_like_github_repo(&path) {
+                                github_repos.push((dir_name.to_string(), path.clone()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if syncable_configs.is_empty() && github_repos.is_empty() {
             println!("📦 No imported configs with remote origins found. Nothing to sync.");
             return Ok(());
         }
 
         println!("\n🔄 Config Sync Overview");
         println!("═══════════════════════");
-        println!(
-            "Found {} config(s) with remote origins:",
-            syncable_configs.len()
-        );
 
-        for (name, origin) in &syncable_configs {
-            let sync_type = match origin.import_type {
-                ImportType::Public => "📖 Public",
-                ImportType::Private => "🔐 Private",
-            };
-            println!("  • {name} → {sync_type} ({}) ", origin.repo);
+        if !syncable_configs.is_empty() {
+            println!(
+                "Found {} individual config(s) with remote origins:",
+                syncable_configs.len()
+            );
+
+            for (name, origin) in &syncable_configs {
+                let sync_type = match origin.import_type {
+                    ImportType::Public => "📖 Public",
+                    ImportType::Private => "🔐 Private",
+                };
+                println!("  • {name} → {sync_type} ({}) ", origin.repo);
+            }
+        }
+
+        if !github_repos.is_empty() {
+            println!(
+                "Found {} GitHub repository director(ies):",
+                github_repos.len()
+            );
+            for (repo_name, _) in &github_repos {
+                println!("  • {repo_name} → 🔐 Git Repository");
+            }
         }
 
         println!("\n⚠️  WARNING: This will overwrite all local changes in imported configs!");
@@ -811,6 +843,7 @@ impl ConfigManager {
 
         let mut sync_results = Vec::new();
 
+        // Sync individual configs with origins
         for (config_name, origin) in syncable_configs {
             print!("🔄 Syncing {config_name} from {}... ", origin.repo);
 
@@ -823,6 +856,28 @@ impl ConfigManager {
                     println!("❌ Failed");
                     println!("   Error: {e}");
                     sync_results.push((config_name, false, Some(e.to_string())));
+                }
+            }
+        }
+
+        // Sync GitHub repository directories using git commands
+        for (repo_name, repo_path) in github_repos {
+            print!("🔄 Syncing repository {repo_name}... ");
+
+            match self.sync_github_repository(&repo_path).await {
+                Ok(()) => {
+                    println!("✅ Success");
+                    sync_results.push((repo_name.clone(), true, None));
+
+                    // Reload configs from the updated repository
+                    if let Err(e) = self.reload_repo_configs(&repo_path, &repo_name) {
+                        println!("⚠️  Warning: Failed to reload configs from {repo_name}: {e}");
+                    }
+                }
+                Err(e) => {
+                    println!("❌ Failed");
+                    println!("   Error: {e}");
+                    sync_results.push((repo_name, false, Some(e.to_string())));
                 }
             }
         }
@@ -896,6 +951,159 @@ impl ConfigManager {
         // Update in-memory config
         self.imported_configs
             .insert(config_name.to_string(), config);
+
+        Ok(())
+    }
+
+    /// Check if a directory looks like a GitHub repository directory
+    fn looks_like_github_repo(&self, path: &Path) -> bool {
+        // Check if directory contains YAML files (typical for imported repos)
+        if let Ok(entries) = fs::read_dir(path) {
+            for entry in entries.flatten() {
+                let file_path = entry.path();
+                if file_path.is_file() {
+                    if let Some(extension) = file_path.extension() {
+                        if extension == "yaml" || extension == "yml" {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    /// Sync a GitHub repository directory using git commands
+    async fn sync_github_repository(&self, repo_path: &Path) -> Result<()> {
+        // Check if git is available
+        let git_check = Command::new("git").arg("--version").output();
+        if git_check.is_err() {
+            return Err(anyhow!(
+                "Git command not found. Repository sync requires Git to be installed and available in PATH"
+            ));
+        }
+
+        // Check if this is a git repository
+        let git_dir = repo_path.join(".git");
+        if !git_dir.exists() {
+            return Err(anyhow!(
+                "Directory is not a git repository. Cannot sync without git history."
+            ));
+        }
+
+        // Change to the repository directory and run git commands
+        // First, fetch all remote changes
+        let fetch_result = Command::new("git")
+            .current_dir(repo_path)
+            .arg("fetch")
+            .arg("--all")
+            .arg("--prune")
+            .output();
+
+        match fetch_result {
+            Ok(output) => {
+                if !output.status.success() {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    return Err(anyhow!("Failed to fetch remote changes: {}", stderr.trim()));
+                }
+            }
+            Err(e) => {
+                return Err(anyhow!("Failed to execute git fetch: {}", e));
+            }
+        }
+
+        // Force reset to origin/main (or master) - this will overwrite local changes
+        let branches = ["origin/main", "origin/master"];
+        let mut reset_success = false;
+        let mut last_error = String::new();
+
+        for branch in &branches {
+            let reset_result = Command::new("git")
+                .current_dir(repo_path)
+                .arg("reset")
+                .arg("--hard")
+                .arg(branch)
+                .output();
+
+            match reset_result {
+                Ok(output) => {
+                    if output.status.success() {
+                        reset_success = true;
+                        break;
+                    } else {
+                        last_error = String::from_utf8_lossy(&output.stderr).to_string();
+                    }
+                }
+                Err(e) => {
+                    last_error = e.to_string();
+                }
+            }
+        }
+
+        if !reset_success {
+            return Err(anyhow!(
+                "Failed to reset repository to remote state. Last error: {}",
+                last_error.trim()
+            ));
+        }
+
+        // Clean up any untracked files
+        let clean_result = Command::new("git")
+            .current_dir(repo_path)
+            .arg("clean")
+            .arg("-fd") // Force remove untracked files and directories
+            .output();
+
+        if let Err(e) = clean_result {
+            // Log warning but don't fail the sync for clean errors
+            eprintln!("Warning: Failed to clean untracked files: {}", e);
+        }
+
+        Ok(())
+    }
+
+    /// Reload configs from an updated repository directory
+    fn reload_repo_configs(&mut self, repo_path: &Path, repo_name: &str) -> Result<()> {
+        // Remove old configs from this repository
+        let keys_to_remove: Vec<String> = self
+            .imported_configs
+            .keys()
+            .filter(|key| key.starts_with(&format!("{}_", repo_name)))
+            .cloned()
+            .collect();
+
+        for key in keys_to_remove {
+            self.imported_configs.remove(&key);
+        }
+
+        // Reload configs from the repository directory
+        let yaml_extensions = ["yaml", "yml"];
+        for entry in fs::read_dir(repo_path)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_file() {
+                if let Some(extension) = path.extension() {
+                    if let Some(ext_str) = extension.to_str() {
+                        if yaml_extensions.contains(&ext_str) {
+                            // Try to load as a doo config
+                            if let Ok(contents) = fs::read_to_string(&path) {
+                                if let Ok(config) = serde_yaml::from_str::<Config>(&contents) {
+                                    if !config.commands.is_empty() {
+                                        let file_stem = path
+                                            .file_stem()
+                                            .and_then(|name| name.to_str())
+                                            .unwrap_or("config");
+                                        let config_name = format!("{repo_name}_{file_stem}");
+                                        self.imported_configs.insert(config_name, config);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         Ok(())
     }
