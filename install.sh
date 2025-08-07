@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Doo CLI Installation Script
-# Usage: curl -fsSL https://raw.githubusercontent.com/urbanisierung/clap/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/urbanisierung/doo/main/install.sh | bash
 
 set -e
 

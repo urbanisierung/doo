@@ -18,20 +18,20 @@ A powerful CLI tool that wraps other commands with persistent variables and cont
 **Linux & macOS:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/urbanisierung/clap/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/urbanisierung/doo/main/install.sh | bash
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-iwr -useb https://raw.githubusercontent.com/urbanisierung/clap/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/urbanisierung/doo/main/install.ps1 | iex
 ```
 
 ### From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/urbanisierung/clap.git
+git clone https://github.com/urbanisierung/doo.git
 cd clap
 
 # Build and install
@@ -41,7 +41,7 @@ cargo install --path .
 
 ### Manual Installation
 
-1. Download the latest release from [GitHub Releases](https://github.com/urbanisierung/clap/releases)
+1. Download the latest release from [GitHub Releases](https://github.com/urbanisierung/doo/releases)
 2. Extract the binary for your platform
 3. Move it to a directory in your PATH (e.g., `/usr/local/bin` on Linux/macOS)
 
@@ -166,13 +166,13 @@ Doo config files follow a standardized YAML structure with JSON Schema validatio
 Add this line at the top of your config files to enable schema validation and autocompletion in supported IDEs:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/urbanisierung/clap/main/doo-config.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/urbanisierung/doo/main/doo-config.schema.json
 ```
 
 #### Basic Structure
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/urbanisierung/clap/main/doo-config.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/urbanisierung/doo/main/doo-config.schema.json
 
 commands:
   command-name: "command template"
@@ -197,7 +197,7 @@ You can use the provided template as a starting point:
 
 ```bash
 # Copy the template
-curl -o my-commands.yaml https://raw.githubusercontent.com/urbanisierung/clap/main/doo-config.template.yaml
+curl -o my-commands.yaml https://raw.githubusercontent.com/urbanisierung/doo/main/doo-config.template.yaml
 
 # Edit and import
 doo import my-commands.yaml
@@ -213,7 +213,7 @@ doo import my-commands.yaml
 #### Example Valid Configuration
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/urbanisierung/clap/main/doo-config.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/urbanisierung/doo/main/doo-config.schema.json
 
 commands:
   # Kubernetes commands with persistent variables
@@ -334,7 +334,7 @@ your-doo-configs/
 **Required `doo.yaml` format with schema support:**
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/urbanisierung/clap/main/doo-config.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/urbanisierung/doo/main/doo-config.schema.json
 
 commands:
   # Examples of both placeholder types

@@ -7,13 +7,13 @@ This directory contains installation scripts for the Doo CLI tool that automatic
 ### Linux & macOS
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/urbanisierung/clap/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/urbanisierung/doo/main/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-iwr -useb https://raw.githubusercontent.com/urbanisierung/clap/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/urbanisierung/doo/main/install.ps1 | iex
 ```
 
 ## What the Scripts Do
@@ -65,7 +65,7 @@ The installation scripts support the following platforms that match the GitHub A
 
 If the automatic scripts don't work for your system:
 
-1. Go to [GitHub Releases](https://github.com/urbanisierung/clap/releases)
+1. Go to [GitHub Releases](https://github.com/urbanisierung/doo/releases)
 2. Download the binary for your platform
 3. Extract it and move to a directory in your PATH
 4. Make it executable (Linux/macOS): `chmod +x doo`
@@ -78,7 +78,7 @@ If the automatic scripts don't work for your system:
 
 ```bash
 # If installation fails due to permissions, try:
-curl -fsSL https://raw.githubusercontent.com/urbanisierung/clap/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/urbanisierung/doo/main/install.sh | bash
 # Then add ~/.local/bin to your PATH if not already there
 export PATH="$PATH:$HOME/.local/bin"
 ```
@@ -100,7 +100,7 @@ source ~/.bashrc
 ```powershell
 # If you get execution policy errors:
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-iwr -useb https://raw.githubusercontent.com/urbanisierung/clap/main/install.ps1 | iex
+iwr -useb https://raw.githubusercontent.com/urbanisierung/doo/main/install.ps1 | iex
 ```
 
 **PATH Not Updated**
@@ -124,5 +124,5 @@ The scripts are designed to be transparent and safe. You can always inspect them
 
 ```bash
 # Review the script before running
-curl -fsSL https://raw.githubusercontent.com/urbanisierung/clap/main/install.sh
+curl -fsSL https://raw.githubusercontent.com/urbanisierung/doo/main/install.sh
 ```

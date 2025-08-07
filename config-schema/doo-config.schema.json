@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/urbanisierung/clap/main/doo-config.schema.json",
+  "$id": "https://raw.githubusercontent.com/urbanisierung/doo/main/doo-config.schema.json",
   "title": "Doo CLI Configuration",
   "description": "Configuration schema for Doo CLI command wrapper tool",
   "type": "object",

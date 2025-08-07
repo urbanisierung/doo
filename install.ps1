@@ -1,5 +1,5 @@
 # Doo CLI Installation Script for Windows
-# Usage: iwr -useb https://raw.githubusercontent.com/urbanisierung/clap/main/install.ps1 | iex
+# Usage: iwr -useb https://raw.githubusercontent.com/urbanisierung/doo/main/install.ps1 | iex
 
 param(
     [string]$InstallDir = "",
