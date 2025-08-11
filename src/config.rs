@@ -9,9 +9,37 @@ use tempfile::TempDir;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Config {
-    pub commands: HashMap<String, String>,
+    pub commands: HashMap<String, CommandEntry>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub origin: Option<ConfigOrigin>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CommandEntry {
+    /// Simple string form: name: "command template"
+    Simple(String),
+    /// Detailed form with optional description used for search & interactive menu display
+    Detailed {
+        command: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        description: Option<String>,
+    },
+}
+
+impl CommandEntry {
+    pub fn command_str(&self) -> &str {
+        match self {
+            CommandEntry::Simple(s) => s,
+            CommandEntry::Detailed { command, .. } => command,
+        }
+    }
+    pub fn description(&self) -> Option<&str> {
+        match self {
+            CommandEntry::Simple(_) => None,
+            CommandEntry::Detailed { description, .. } => description.as_deref(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -31,7 +59,15 @@ pub struct CommandSource {
     #[allow(dead_code)]
     pub name: String,
     pub command: String,
+    pub description: Option<String>,
     pub source_file: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct CommandSearchResult {
+    pub name: String,
+    pub command: String,
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -82,13 +118,22 @@ impl ConfigManager {
                 commands: HashMap::from([
                     (
                         "watch".to_string(),
-                        "watch kubectl -n #1 get pods".to_string(),
+                        CommandEntry::Detailed {
+                            command: "watch kubectl -n #1 get pods".to_string(),
+                            description: Some("Watch pods in current namespace (#1)".to_string()),
+                        },
                     ),
-                    ("logs".to_string(), "kubectl logs -f -n #1 #2".to_string()),
-                    ("pods".to_string(), "kubectl get pods -n #1".to_string()),
+                    (
+                        "logs".to_string(),
+                        CommandEntry::Simple("kubectl logs -f -n #1 #2".to_string()),
+                    ),
+                    (
+                        "pods".to_string(),
+                        CommandEntry::Simple("kubectl get pods -n #1".to_string()),
+                    ),
                     (
                         "describe".to_string(),
-                        "kubectl describe pod -n #1 #2".to_string(),
+                        CommandEntry::Simple("kubectl describe pod -n #1 #2".to_string()),
                     ),
                 ]),
                 origin: None, // Main config has no origin
@@ -1207,41 +1252,38 @@ impl ConfigManager {
 
     pub fn get_command(&self, name: &str) -> Result<Option<String>> {
         // First check main config
-        if let Some(command) = self.main_config.commands.get(name) {
-            return Ok(Some(command.clone()));
+        if let Some(entry) = self.main_config.commands.get(name) {
+            return Ok(Some(entry.command_str().to_string()));
         }
 
-        // Then check imported configs
         for config in self.imported_configs.values() {
-            if let Some(command) = config.commands.get(name) {
-                return Ok(Some(command.clone()));
+            if let Some(entry) = config.commands.get(name) {
+                return Ok(Some(entry.command_str().to_string()));
             }
         }
-
         Ok(None)
     }
 
     pub fn get_command_with_source(&self, name: &str) -> Result<Option<CommandSource>> {
         // First check main config
-        if let Some(command) = self.main_config.commands.get(name) {
+        if let Some(entry) = self.main_config.commands.get(name) {
             return Ok(Some(CommandSource {
                 name: name.to_string(),
-                command: command.clone(),
+                command: entry.command_str().to_string(),
+                description: entry.description().map(|s| s.to_string()),
                 source_file: "main".to_string(),
             }));
         }
-
-        // Then check imported configs
         for (config_name, config) in &self.imported_configs {
-            if let Some(command) = config.commands.get(name) {
+            if let Some(entry) = config.commands.get(name) {
                 return Ok(Some(CommandSource {
                     name: name.to_string(),
-                    command: command.clone(),
+                    command: entry.command_str().to_string(),
+                    description: entry.description().map(|s| s.to_string()),
                     source_file: config_name.clone(),
                 }));
             }
         }
-
         Ok(None)
     }
 
@@ -1249,25 +1291,24 @@ impl ConfigManager {
         let mut conflicts = Vec::new();
 
         // Check main config
-        if let Some(command) = self.main_config.commands.get(name) {
+        if let Some(entry) = self.main_config.commands.get(name) {
             conflicts.push(CommandSource {
                 name: name.to_string(),
-                command: command.clone(),
+                command: entry.command_str().to_string(),
+                description: entry.description().map(|s| s.to_string()),
                 source_file: "main".to_string(),
             });
         }
-
-        // Check imported configs
         for (config_name, config) in &self.imported_configs {
-            if let Some(command) = config.commands.get(name) {
+            if let Some(entry) = config.commands.get(name) {
                 conflicts.push(CommandSource {
                     name: name.to_string(),
-                    command: command.clone(),
+                    command: entry.command_str().to_string(),
+                    description: entry.description().map(|s| s.to_string()),
                     source_file: config_name.clone(),
                 });
             }
         }
-
         conflicts
     }
 
@@ -1277,20 +1318,25 @@ impl ConfigManager {
         chosen_source: &str,
     ) -> Result<Option<String>> {
         if chosen_source == "main" {
-            return Ok(self.main_config.commands.get(name).cloned());
+            return Ok(self
+                .main_config
+                .commands
+                .get(name)
+                .map(|e| e.command_str().to_string()));
         }
-
         if let Some(config) = self.imported_configs.get(chosen_source) {
-            return Ok(config.commands.get(name).cloned());
+            return Ok(config
+                .commands
+                .get(name)
+                .map(|e| e.command_str().to_string()));
         }
-
         Err(anyhow!("Invalid source file: {}", chosen_source))
     }
 
     pub fn add_command(&mut self, name: &str, command: &str) -> Result<()> {
         self.main_config
             .commands
-            .insert(name.to_string(), command.to_string());
+            .insert(name.to_string(), CommandEntry::Simple(command.to_string()));
         self.save_main_config()
     }
 
@@ -1304,34 +1350,50 @@ impl ConfigManager {
 
     pub fn list_commands(&self) -> HashMap<String, String> {
         let mut all_commands = HashMap::new();
-
-        // Add main config commands
-        for (name, command) in &self.main_config.commands {
-            all_commands.insert(name.clone(), command.clone());
+        for (name, entry) in &self.main_config.commands {
+            all_commands.insert(name.clone(), entry.command_str().to_string());
         }
-
-        // Add imported config commands (imported configs override main if there's a conflict)
         for config in self.imported_configs.values() {
-            for (name, command) in &config.commands {
-                all_commands.insert(name.clone(), command.clone());
+            for (name, entry) in &config.commands {
+                all_commands.insert(name.clone(), entry.command_str().to_string());
             }
         }
-
         all_commands
     }
 
-    pub fn search_commands(&self, query: &str) -> Vec<(String, String)> {
-        let query_lower = query.to_lowercase();
-        let all_commands = self.list_commands();
+    pub fn search_commands(&self, query: &str) -> Vec<CommandSearchResult> {
+        let q = query.to_lowercase();
+        let mut results = Vec::new();
 
-        all_commands
-            .iter()
-            .filter(|(name, command)| {
-                name.to_lowercase().contains(&query_lower)
-                    || command.to_lowercase().contains(&query_lower)
-            })
-            .map(|(name, command)| (name.clone(), command.clone()))
-            .collect()
+        // Iterate through merged view (imported override main). We'll prefer imported variant already handled by iteration order (main then imported overwrite) but for description we just display whichever ends up.
+        let mut merged: HashMap<String, &CommandEntry> = HashMap::new();
+        for (name, entry) in &self.main_config.commands {
+            merged.insert(name.clone(), entry);
+        }
+        for config in self.imported_configs.values() {
+            for (name, entry) in &config.commands {
+                merged.insert(name.clone(), entry); // override
+            }
+        }
+
+        for (name, entry) in merged {
+            let cmd = entry.command_str();
+            let desc = entry.description();
+            if q.is_empty()
+                || name.to_lowercase().contains(&q)
+                || cmd.to_lowercase().contains(&q)
+                || desc.map(|d| d.to_lowercase().contains(&q)).unwrap_or(false)
+            {
+                results.push(CommandSearchResult {
+                    name,
+                    command: cmd.to_string(),
+                    description: desc.map(|s| s.to_string()),
+                });
+            }
+        }
+        // Sort by name for stable display
+        results.sort_by(|a, b| a.name.cmp(&b.name));
+        results
     }
 
     fn save_main_config(&self) -> Result<()> {

@@ -10,13 +10,37 @@
       "description": "Command definitions with name-to-template mappings",
       "patternProperties": {
         "^[a-zA-Z0-9_-]+$": {
-          "type": "string",
-          "description": "Command template with variable placeholders. Use #1, #2, etc. for persistent variables or $1, $2, etc. for direct positional arguments",
-          "minLength": 1,
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "Simple command template with variable placeholders. Use #1, #2, etc. for persistent variables or $1, $2, etc. for direct positional arguments",
+              "minLength": 1
+            },
+            {
+              "type": "object",
+              "description": "Detailed command definition with optional description used for search & interactive menu display",
+              "properties": {
+                "command": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Command template string"
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Optional human-readable description (included in fuzzy search and shown in interactive menu)"
+                }
+              },
+              "required": ["command"],
+              "additionalProperties": false
+            }
+          ],
           "examples": [
             "kubectl get pods -n #1",
-            "docker logs -f $1",
-            "kubectl -n #1 logs $1 $2"
+            {
+              "command": "docker logs -f $1",
+              "description": "Stream logs for a container"
+            }
           ]
         }
       },

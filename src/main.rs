@@ -309,6 +309,9 @@ fn handle_command_execution(
                 conflict.source_file.blue(),
                 conflict.command.bright_white()
             );
+            if let Some(desc) = &conflict.description {
+                println!("      {}", desc.truecolor(140, 140, 140));
+            }
         }
 
         print!(
