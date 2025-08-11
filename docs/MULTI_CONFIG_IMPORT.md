@@ -44,7 +44,9 @@ Each YAML file should follow the doo config format:
 
 commands:
   command-name: "command template with #1 #2"
-  another-cmd: "another command template"
+  another-cmd:
+    command: "another command template"
+    description: "Optional description shown in interactive menu and searchable"
 ```
 
 ## Benefits

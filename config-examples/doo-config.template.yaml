@@ -6,7 +6,9 @@
 commands:
   # Example commands using persistent variables (#1, #2, etc.)
   # These can be set with: doo var #1 value
-  watch: "watch kubectl -n #1 get pods"
+  watch:
+    command: "watch kubectl -n #1 get pods"
+    description: "Continuously list pods in namespace (#1)"
   logs: "kubectl logs -f -n #1 #2"
   pods: "kubectl get pods -n #1"
   describe: "kubectl describe pod -n #1 #2"
@@ -24,7 +26,9 @@ commands:
   mixed-logs: "kubectl -n #1 logs $1 $2"  # #1 is persistent, $1/$2 are direct args
 
   # Docker commands
-  docker-ps: "docker ps"
+  docker-ps:
+    command: "docker ps"
+    description: "List running containers"
   docker-logs: "docker logs -f $1"
   docker-exec: "docker exec -it $1 /bin/bash"
   docker-build: "docker build -t #1 ."

@@ -7,7 +7,7 @@ A powerful CLI tool that wraps other commands with persistent variables and cont
 - 🔧 **Command Wrapping**: Define command templates that can be executed with simple names
 - 🔄 **Variable Substitution**: Use persistent variables like `#1`, `#2` that persist across sessions
 - 🎯 **Context Management**: Switch between different contexts (e.g., dev, staging, prod) with separate variable sets
-- 🔍 **Interactive Menu**: Browse and search through available commands with a terminal-based UI
+- 🔍 **Interactive Menu**: Browse and search through available commands with a terminal-based UI (supports optional per-command descriptions)
 - 🎨 **Colorful Output**: Nice colors to make the CLI experience pleasant
 - 📁 **Cross-Platform**: Works on Linux, macOS, and Windows
 
@@ -144,7 +144,7 @@ Simply run `doo` without arguments to open an interactive menu powered by the ma
 - **Quick execution**: Press Enter to execute the selected command
 - **Easy exit**: Press Esc to cancel and exit
 
-The menu displays your current context and allows real-time filtering of commands as you type.
+The menu displays your current context and allows real-time filtering of commands as you type. If a command has a description it is printed on the line below the command entry in a subtle gray and is part of the fuzzy search index.
 
 ## Configuration
 
@@ -176,7 +176,9 @@ Add this line at the top of your config files to enable schema validation and au
 
 commands:
   command-name: "command template"
-  another-command: "another template with #1 #2"
+  another-command:
+    command: "another template with #1 #2"
+    description: "Optional human readable text shown in the interactive menu and used for fuzzy search"
 ```
 
 #### Required Fields
@@ -187,6 +189,11 @@ commands:
 
 #### Optional Fields
 
+- **Per-command description**: Each command value may be either:
+  - A simple string (just the command template)
+  - An object with:
+    - `command` (string, required)
+    - `description` (string, optional) – included in search and displayed beneath the menu item
 - **`origin`** (object, optional): Automatically added by `doo import` for tracking remote sources
   - **`repo`** (string): GitHub repository in `owner/repo` format
   - **`import_type`** (enum): Either `"Public"` or `"Private"`
@@ -210,19 +217,25 @@ doo import my-commands.yaml
 3. **Reserved Names**: Cannot use `var`, `context`, `import`, `sync` as command names
 4. **Variable Placeholders**: Use `#1`, `#2` for persistent variables or `$1`, `$2` for direct arguments
 
-#### Example Valid Configuration
+#### Example Valid Configuration (with descriptions)
 
 ```yaml
 # yaml-language-server: $schema=https://bucket.u11g.com/doo-config.schema.json
 
 commands:
   # Kubernetes commands with persistent variables
-  k-watch: "watch kubectl -n #1 get pods"
-  k-logs: "kubectl logs -f -n #1 #2"
-  k-describe: "kubectl describe pod -n #1 #2"
+  k-watch:
+    command: "watch kubectl -n #1 get pods"
+    description: "Continuously list pods in the current namespace (#1)"
+  k-logs: "kubectl logs -f -n #1 #2" # simple style still works
+  k-describe:
+    command: "kubectl describe pod -n #1 #2"
+    description: "Describe a pod (#2) in namespace (#1)"
 
   # Docker commands with direct arguments
-  d-logs: "docker logs -f $1"
+  d-logs:
+    command: "docker logs -f $1"
+    description: "Follow container logs (container name as $1)"
   d-exec: "docker exec -it $1 /bin/bash"
 
   # Mixed approach
@@ -230,7 +243,9 @@ commands:
 
   # Simple commands
   git-status: "git status"
-  disk-space: "df -h"
+  disk-space:
+    command: "df -h"
+    description: "Show mounted filesystem usage"
 ```
 
 ### Command Templates

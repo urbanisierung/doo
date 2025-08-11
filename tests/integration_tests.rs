@@ -25,11 +25,7 @@ fn test_full_workflow() -> Result<()> {
     );
 
     // Test command resolution
-    let resolved = variable_manager.resolve_variables(
-        "test",
-        "kubectl get pods -n #1",
-        &[],
-    )?;
+    let resolved = variable_manager.resolve_variables("test", "kubectl get pods -n #1", &[])?;
     assert_eq!(resolved, "kubectl get pods -n production");
 
     // Test with positional arguments
@@ -60,7 +56,7 @@ fn test_command_management() -> Result<()> {
     // Test command search
     let results = config_manager.search_commands("echo");
     assert!(!results.is_empty());
-    assert!(results.iter().any(|(name, _)| name == "custom"));
+    assert!(results.iter().any(|r| r.name == "custom"));
 
     Ok(())
 }
